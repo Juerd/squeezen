@@ -212,29 +212,37 @@ my %keys = (
 );
 $ui->set_binding($keys{$_}, $_) for keys %keys;
 
-
+my $title;
 my $controls = $window->add(undef, 'Container',
     -releasefocus => 1,
-    -border => 1,
-    -height => 4,
+    -x => 0,
+    -border => 0,
+    -height => 2,
     -titlereverse => 0,
+    -onfocus => sub { $title->bold(1) },
+    -onblur  => sub { $title->bold(0) },
 );
-my $time = $controls->add(undef, 'Label' );
+$title = $controls->add(undef, 'Label', -y => 0, -underline => 1 );
+
 my $buttons = [
     { -label => ' << ', -onpress => \&prev },
     { -label => ' PP ', -onpress => \&playpause },
     { -label => ' >> ', -onpress => \&next },
 ];
+my $time = $controls->add(undef, 'Label', -width => 14, -y => 1, -x => 1 );
 
 $controls->add(undef, 'Buttonbox',
     -y => 1,
+    -x => 40,
+    -width => 14,
     -buttons => $buttons
 );
+my $volume = $controls->add(undef, 'Label', -y => 1,  -x => 67 );
 
 my $playlist = $window->add(undef, 'Listbox',
     -border => 1,
-    -height => 8,
-    -y => 4,
+    -height => 10,
+    -y => 2,
     -title => "Playlist",
     -titlereverse => 0,
     -onchange => \&jump,
@@ -285,20 +293,21 @@ sub update_status {
     }
 
     my $t = ftime($status{time}) . ' / ' . ftime($status{duration});
+    $time->text($t);
+
     $status{'mixer volume'} //= 0;
     my $v = $status{'mixer volume'} > 0
-        ? sprintf "[-%-40s+]", '#' x ($status{'mixer volume'} / 2.5)
-        : sprintf "* MUTE *";
-    my $i = 0;
-    # $v =~ s[#]{ my $n = int((++$i + 3) / 4); $n < 10 ? $n : 0 }ge;
-    my $pos = $time->width() - length($v);
-    $time->text(sprintf "%-${pos}s%s", $t, $v);
+        ? sprintf "Volume %3d%%", int($status{'mixer volume'})
+        : sprintf "%11s", "* MUTE *";
+    $volume->text($v);
 
     $status{mode} //= 'pause';
-    $buttons->[1]{-label} = $status{mode} eq 'pause' ? '  >   ' : '  ||  ';
+    $buttons->[1]{-label} = $status{mode} eq 'pause' ? ' >  ' : ' || ';
 
     my $np = (grep { $_->{index} == $status{playlist_cur_index} } @plist)[0];
-    $controls->title($np ? "$np->{artist} - $np->{title}" : "Silence");
+    my $w = $title->width;
+    $np = $np ? "$np->{artist} - $np->{title}" : "Silence";
+    $title->text(sprintf "%-${w}s", " $np");
 
     my $ypos = $playlist->{-ypos};
     (undef, my $song_id) = split /~/, $playlist->get_active_value // "~-1";
