@@ -1,0 +1,13 @@
+squeezen - Squeezebox remote console for text mode terminals.
+
+2013, Juerd Waalboer
+
+    apt-get install libcurses-ui-perl liburi-perl perl-modules perl
+    perl squeezen.pl
+
+Hacked together in a few hours; please forgive me for writing ugly code.
+Especially the music folder browser code is terrifying.
+
+We're using it on an old IBM 3151 terminal at RevSpace, the hackerspace in
+The Hague. Come visit us to see it in action :-)
+
