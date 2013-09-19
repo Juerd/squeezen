@@ -221,9 +221,9 @@ my $controls = $window->add(undef, 'Container',
 );
 my $time = $controls->add(undef, 'Label' );
 my $buttons = [
-    { -label => '  <<  ', -onpress => \&prev },
-    { -label => '  PP  ', -onpress => \&playpause },
-    { -label => '  >>  ', -onpress => \&next },
+    { -label => ' << ', -onpress => \&prev },
+    { -label => ' PP ', -onpress => \&playpause },
+    { -label => ' >> ', -onpress => \&next },
 ];
 
 $controls->add(undef, 'Buttonbox',
