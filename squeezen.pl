@@ -238,6 +238,7 @@ my $nextlist = $window->add(undef, 'Listbox',
     -title => "Playlist",
     -titlereverse => 0,
     -onchange => \&jump,
+    -vscrollbar => 'right',
 );
 $nextlist->set_binding(\&delete, KEY_DC());
 
@@ -247,6 +248,7 @@ my $browser = $window->add(undef, 'Listbox',
     -height => 10,
     -titlereverse => 0,
     -onchange => \&browser_go,
+    -vscrollbar => 'right',
 );
 $browser->set_binding(sub {
     browser_go($browser, "GO_BACK");
