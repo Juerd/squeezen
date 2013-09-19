@@ -55,8 +55,8 @@ sub vol       { squeeze $player, qw'mixer volume', shift; update_status(); }
 sub mute      { squeeze $player, qw'mixer muting'; update_status(); }
 
 sub delete    {
-    my ($nextlist) = @_;
-    squeeze $player,qw'playlist delete', $nextlist->get_active_value;
+    my ($playlist) = @_;
+    squeeze $player,qw'playlist delete', $playlist->get_active_value;
     update_status();
 }
 
@@ -213,25 +213,25 @@ my %keys = (
 $ui->set_binding($keys{$_}, $_) for keys %keys;
 
 
-my $title = $window->add(undef, 'Container',
+my $controls = $window->add(undef, 'Container',
     -releasefocus => 1,
     -border => 1,
     -height => 4,
     -titlereverse => 0,
 );
-my $time = $title->add(undef, 'Label' );
+my $time = $controls->add(undef, 'Label' );
 my $buttons = [
     { -label => '  <<  ', -onpress => \&prev },
     { -label => '  PP  ', -onpress => \&playpause },
     { -label => '  >>  ', -onpress => \&next },
 ];
 
-$title->add(undef, 'Buttonbox',
+$controls->add(undef, 'Buttonbox',
     -y => 1,
     -buttons => $buttons
 );
 
-my $nextlist = $window->add(undef, 'Listbox',
+my $playlist = $window->add(undef, 'Listbox',
     -border => 1,
     -height => 8,
     -y => 4,
@@ -240,7 +240,7 @@ my $nextlist = $window->add(undef, 'Listbox',
     -onchange => \&jump,
     -vscrollbar => 'right',
 );
-$nextlist->set_binding(\&delete, KEY_DC());
+$playlist->set_binding(\&delete, KEY_DC());
 
 my $browser = $window->add(undef, 'Listbox',
     -y => 12,
@@ -255,8 +255,8 @@ $browser->set_binding(sub {
 }, KEY_LEFT());
 
 
-$title->set_binding(sub { $browser->focus }, KEY_BTAB);
-$title->set_binding(sub { $nextlist->focus }, "\t");
+$controls->set_binding(sub { $browser->focus }, KEY_BTAB);
+$controls->set_binding(sub { $playlist->focus }, "\t");
 
 browser_go($browser);
 update_status();
@@ -271,14 +271,14 @@ $ui->mainloop;
 
 sub update_status {
     my @status = squeeze $player, qw'status - 20';
-    my @playlist;
+    my @plist;
     my %status;
     while (defined ($_ = shift @status)) {
         my ($key, $value) = split ':', $_, 2;
         if ($key eq 'playlist index') {
-            push @playlist, { index => $value };
-        } elsif (@playlist) {
-            $playlist[-1]{ $key } = $value;
+            push @plist, { index => $value };
+        } elsif (@plist) {
+            $plist[-1]{ $key } = $value;
         } else {
             $status{$key} = $value;
         }
@@ -297,22 +297,22 @@ sub update_status {
     $status{mode} //= 'pause';
     $buttons->[1]{-label} = $status{mode} eq 'pause' ? '  >   ' : '  ||  ';
 
-    my $np = (grep { $_->{index} == $status{playlist_cur_index} } @playlist)[0];
-    $title->title($np ? "$np->{artist} - $np->{title}" : "Silence");
+    my $np = (grep { $_->{index} == $status{playlist_cur_index} } @plist)[0];
+    $controls->title($np ? "$np->{artist} - $np->{title}" : "Silence");
 
-    my $ypos = $nextlist->{-ypos};
-    (undef, my $song_id) = split /~/, $nextlist->get_active_value // "~-1";
+    my $ypos = $playlist->{-ypos};
+    (undef, my $song_id) = split /~/, $playlist->get_active_value // "~-1";
     unless ($in_modal) {
-        for (0..$#playlist) {
-            $ypos = $_ if $playlist[$_]->{id} == $song_id;
+        for (0..$#plist) {
+            $ypos = $_ if $plist[$_]->{id} == $song_id;
         }
-        $nextlist->values(
-            [ map "$_->{index}~$_->{id}", @playlist ]
+        $playlist->values(
+            [ map "$_->{index}~$_->{id}", @plist ]
         );
-        $nextlist->labels( { map {
+        $playlist->labels( { map {
             ("$_->{index}~$_->{id}" => "$_->{artist} - $_->{title}")
-        } @playlist });
-        $nextlist->{-ypos} = $ypos;
-        $nextlist->draw();
+        } @plist });
+        $playlist->{-ypos} = $ypos;
+        $playlist->draw();
     }
 }
