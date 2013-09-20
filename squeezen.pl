@@ -278,7 +278,7 @@ $ui->mainloop;
 #  meh, globals :)
 
 sub update_status {
-    my @status = squeeze $player, qw'status - 20';
+    my @status = squeeze $player, qw'status - 50';
     my @plist;
     my %status;
     while (defined ($_ = shift @status)) {
