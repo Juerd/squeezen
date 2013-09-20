@@ -41,7 +41,7 @@ if (@ARGV) {
     exit;
 }
 
-my $ui = Curses::UI->new(-compat => 0, -color_support => 1);
+my $ui = Curses::UI->new(-compat => 1, -color_support => 1);
 my $window = $ui->add(undef,  'Window');
 my $in_modal = 0;
 
@@ -302,7 +302,7 @@ sub update_status {
     $volume->text($v);
 
     $status{mode} //= 'pause';
-    $buttons->[1]{-label} = $status{mode} eq 'pause' ? ' >  ' : ' || ';
+    $buttons->[1]{-label} = $status{mode} eq 'play' ? ' || ' : ' >  ';
 
     my $np = (grep { $_->{index} == $status{playlist_cur_index} } @plist)[0];
     my $w = $title->width;
