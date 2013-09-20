@@ -225,16 +225,16 @@ my $controls = $window->add(undef, 'Container',
 $title = $controls->add(undef, 'Label', -y => 0, -underline => 1 );
 
 my $buttons = [
-    { -label => ' << ', -onpress => \&prev },
+    { -label => ' |<< ', -onpress => \&prev },
     { -label => ' PP ', -onpress => \&playpause },
-    { -label => ' >> ', -onpress => \&next },
+    { -label => ' >>| ', -onpress => \&next },
 ];
 my $time = $controls->add(undef, 'Label', -width => 14, -y => 1, -x => 1 );
 
 $controls->add(undef, 'Buttonbox',
     -y => 1,
     -x => 40,
-    -width => 14,
+    -width => 16,
     -buttons => $buttons
 );
 my $volume = $controls->add(undef, 'Label', -y => 1,  -x => 67 );
