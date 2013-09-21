@@ -10,14 +10,22 @@ use Socket qw(SOCK_STREAM inet_ntoa);
 
 my $host;
 my $player;
-# = "be:e0:e6:04:46:38";
+
+my %config;
+%config = (%config, do { my @c = do $_; die $@ if $@; @c } ) for grep -e,
+    "/etc/squeezenrc",
+    "$ENV{HOME}/.squeezenrc",
+    "./.squeezenrc";
+
+$host   = delete $config{host}   if exists $config{host};
+$player = delete $config{player} if exists $config{player};
 
 my $ui = Curses::UI->new(-compat => 1, -color_support => 1);
 my $window = $ui->add(undef,  'Window');
 my $in_modal = 0;
 
 {
-    my $socket; 
+    my $socket;
     sub squeeze {
         my @args = @_;
         $_ = uri_escape($_) for @args;
