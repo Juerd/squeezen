@@ -42,6 +42,7 @@ sub group {
     while (defined (my $input = shift)) {
         if ($input =~ /:/) {
             my ($key, $value) = split /:/, $input, 2;
+            $key =~ s/ /_/g;
             if ($key eq $firstkey) {
                 push @items, { $key => $value };
             } elsif (@items) {
@@ -171,16 +172,10 @@ sub browser_go {
             )
             : ();
 
-        my @folder = squeeze qw'musicfolder 0 2000 tags:at', "folder_id:$fid";
-        my @items;
-        while (defined (my $item = shift @folder)) {
-            my ($key, $value) = split /:/, $item, 2;
-            if ($key eq 'id') {
-                push @items, { id => $value };
-            } elsif (@items) {
-                $items[-1]{$key} = $value;
-            }
-        }
+        my @folder =
+        my @items = group id => squeeze qw'musicfolder 0 2000 tags:at',
+            "folder_id:$fid";
+
         my $y = $browser->{-ypos};
         my $values = [ "HOME", (@up ? "folder~@up!$y" : ()), map {
             "$_->{type}~@path~$_->{id}"
@@ -353,33 +348,22 @@ $ui->mainloop;
 #  meh, globals :)
 
 sub update_status {
-    my @status = squeeze $player, qw'status - 50';
-    my @plist;
-    my %status;
-    while (defined ($_ = shift @status)) {
-        my ($key, $value) = split ':', $_, 2;
-        if ($key eq 'playlist index') {
-            push @plist, { index => $value };
-        } elsif (@plist) {
-            $plist[-1]{ $key } = $value;
-        } else {
-            $status{$key} = $value;
-        }
-    }
+    my ($status, @plist) = group -playlist_index => squeeze $player,
+        qw'status - 50';
 
-    my $t = ftime($status{time}) . ' / ' . ftime($status{duration});
+    my $t = ftime($status->{time}) . ' / ' . ftime($status->{duration});
     $time->text($t);
 
-    $status{'mixer volume'} //= 0;
-    my $v = $status{'mixer volume'} > 0
-        ? sprintf "Volume %3d%%", int($status{'mixer volume'})
+    $status->{mixer_volume} //= 0;
+    my $v = $status->{mixer_volume} > 0
+        ? sprintf "Volume %3d%%", int($status->{mixer_volume})
         : sprintf "%11s", "* MUTE *";
     $volume->text($v);
 
-    $status{mode} //= 'pause';
-    $buttons->[1]{-label} = $status{mode} eq 'play' ? ' || ' : ' >  ';
+    $status->{mode} //= 'pause';
+    $buttons->[1]{-label} = $status->{mode} eq 'play' ? ' || ' : ' >  ';
 
-    my $np = (grep { $_->{index} == $status{playlist_cur_index} } @plist)[0];
+    my $np = (grep { $_->{playlist_index} == $status->{playlist_cur_index} } @plist)[0];
     my $w = $title->width;
     $np = $np ? "$np->{artist} - $np->{title}" : "Silence";
     $title->text(sprintf "%-${w}s", " $np");
@@ -391,10 +375,10 @@ sub update_status {
             $ypos = $_ if $plist[$_]->{id} == $song_id;
         }
         $playlist->values(
-            [ map "$_->{index}~$_->{id}", @plist ]
+            [ map "$_->{playlist_index}~$_->{id}", @plist ]
         );
         $playlist->labels( { map {
-            ("$_->{index}~$_->{id}" => "$_->{artist} - $_->{title}")
+            ("$_->{playlist_index}~$_->{id}" => "$_->{artist} - $_->{title}")
         } @plist });
         $playlist->{-ypos} = $ypos;
         $playlist->draw();
