@@ -94,19 +94,23 @@ if (not $host) {
 if (not $player) {
     my @players = group playerindex => squeeze qw'players 0 100'
         or die "No players found";
-    my $list;
-    $list = $window->add("pickplayer", "Listbox",
-        -title => "Pick a player",
-        -border => 1,
-        -values => [ 0..$#players ],
-        -labels => { map { ($_ => $players[$_]{name}) } 0..$#players },
-        -onchange => sub {
-            $player = $players[ shift->get ]->{playerid};
-            $window->delete("pickplayer");
-            $ui->mainloopExit();
-        }
-    );
-    $ui->mainloop();
+    if (@players == 1) {
+        $player = $players[0]{playerid};
+    } else {
+        my $list;
+        $list = $window->add("pickplayer", "Listbox",
+            -title => "Pick a player",
+            -border => 1,
+            -values => [ 0..$#players ],
+            -labels => { map { ($_ => $players[$_]{name}) } 0..$#players },
+            -onchange => sub {
+                $player = $players[ shift->get ]->{playerid};
+                $window->delete("pickplayer");
+                $ui->mainloopExit();
+            }
+        );
+        $ui->mainloop();
+    }
 }
 
 if (@ARGV) {
