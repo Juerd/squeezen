@@ -5,7 +5,10 @@ use Curses;
 use Curses::UI;
 use URI::Escape qw(uri_escape uri_unescape);
 use IO::Socket::INET;
-use Socket qw(SOCK_STREAM);
+use IO::Select;
+use Socket qw(SOCK_STREAM inet_ntoa);
+
+my $host;
 
 {
     my $socket; 
@@ -14,7 +17,7 @@ use Socket qw(SOCK_STREAM);
         $_ = uri_escape($_) for @args;
 
         $socket && $socket->connected or $socket = IO::Socket::INET->new(
-            PeerHost => "jukebox:9090",
+            PeerHost => "$host:9090",
             Type => SOCK_STREAM,
         ) or return;
 
@@ -32,6 +35,34 @@ sub ftime {
     $s %= 60;
     return sprintf "%d:%02d", $m, $s;
 }
+
+if (not $host) {
+    my $send = IO::Socket::INET->new(
+        PeerAddr => "255.255.255.255",
+        PeerPort => 3483,
+        Proto => 'udp',
+        Broadcast => 1,
+        Reuse => 1,
+    ) or die "Can't open broadcast socket ($!)";
+    my $receive = IO::Socket::INET->new(
+        LocalAddr => "0.0.0.0",
+        LocalPort => $send->sockport,
+        Proto => 'udp',
+        Reuse => 1,
+    );
+
+    # "TLV" discovery, per Slim::Networking::Discovery
+    my $select = IO::Select->new;
+    $select->add($receive);
+    $send->send("e") or die $!;
+    my $buf;
+    if ($select->can_read(2) && $receive->recv($buf, 1)) {
+        $host = $receive->peerhost;
+    }
+    $host or die "No server found";
+}
+
+
 
 my $player = "be:e0:e6:04:46:38";
 
