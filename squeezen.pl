@@ -2,7 +2,7 @@
 use strict;
 no warnings;
 use Curses;
-use Curses::UI;
+use Curses::UI 0.9608;
 use URI::Escape qw(uri_escape uri_unescape);
 use IO::Socket::INET;
 use IO::Select;
