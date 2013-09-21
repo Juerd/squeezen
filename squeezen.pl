@@ -9,6 +9,12 @@ use IO::Select;
 use Socket qw(SOCK_STREAM inet_ntoa);
 
 my $host;
+my $player;
+# = "be:e0:e6:04:46:38";
+
+my $ui = Curses::UI->new(-compat => 1, -color_support => 1);
+my $window = $ui->add(undef,  'Window');
+my $in_modal = 0;
 
 {
     my $socket; 
@@ -26,6 +32,29 @@ my $host;
         $_ = uri_unescape($_) for @reply;
         return @reply;
     }
+}
+
+sub group {
+    my $firstkey = shift;
+    my $returncommon = $firstkey =~ s/^-//;
+    my $common;
+    my @items;
+    while (defined (my $input = shift)) {
+        if ($input =~ /:/) {
+            my ($key, $value) = split /:/, $input, 2;
+            if ($key eq $firstkey) {
+                push @items, { $key => $value };
+            } elsif (@items) {
+                $items[-1]{ $key } = $value;
+            } else {
+                $common->{ $key } = $value;
+            }
+        } else {
+            push @{ $common->{_} }, $_;
+        }
+    }
+    return $common, @items if $returncommon;
+    return @items;
 }
 
 sub ftime {
@@ -62,9 +91,23 @@ if (not $host) {
     $host or die "No server found";
 }
 
-
-
-my $player = "be:e0:e6:04:46:38";
+if (not $player) {
+    my @players = group playerindex => squeeze qw'players 0 100'
+        or die "No players found";
+    my $list;
+    $list = $window->add("pickplayer", "Listbox",
+        -title => "Pick a player",
+        -border => 1,
+        -values => [ 0..$#players ],
+        -labels => { map { ($_ => $players[$_]{name}) } 0..$#players },
+        -onchange => sub {
+            $player = $players[ shift->get ]->{playerid};
+            $window->delete("pickplayer");
+            $ui->mainloopExit();
+        }
+    );
+    $ui->mainloop();
+}
 
 if (@ARGV) {
     $ARGV[0] = $player if $ARGV[0] eq 'P';
@@ -72,9 +115,6 @@ if (@ARGV) {
     exit;
 }
 
-my $ui = Curses::UI->new(-compat => 1, -color_support => 1);
-my $window = $ui->add(undef,  'Window');
-my $in_modal = 0;
 
 sub prev      { squeeze $player, qw'playlist index -1' }
 sub next      { squeeze $player, qw'playlist index +1' }
